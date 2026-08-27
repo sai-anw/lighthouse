@@ -6,7 +6,7 @@ on:
       url:
         description: "Website URL to test"
         required: false
-        default: "https://complywise.global"
+        default: "https://www.complywise.global"
 
 jobs:
   lighthouse:
@@ -22,19 +22,17 @@ jobs:
           node-version: 20
 
       - name: Install Lighthouse CI
-        run: npm install --no-save @lhci/cli
+        run: |
+          npm install --no-save @lhci/cli@0.15.x
 
       - name: Create Lighthouse configuration
-        env:
-          WEBSITE_URL: ${{ inputs.url }}
-          LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
         run: |
           cat > lighthouserc.js <<'EOF'
           module.exports = {
             ci: {
               collect: {
                 url: [
-                  process.env.WEBSITE_URL || 'https://complywise.global'
+                  process.env.WEBSITE_URL || 'https://www.complywise.global'
                 ],
                 numberOfRuns: 3
               },
@@ -48,18 +46,20 @@ jobs:
           };
           EOF
 
-      - name: Display configuration
-        run: cat lighthouserc.js
-
-      - name: Check website
-        env:
-          WEBSITE_URL: ${{ inputs.url }}
-        run: |
-          echo "Testing: $WEBSITE_URL"
-          curl -I --max-time 30 "$WEBSITE_URL"
-
       - name: Run Lighthouse CI
         env:
           WEBSITE_URL: ${{ inputs.url }}
           LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
-        run: npx lhci autorun
+
+          # Unique build information
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.run_id }}
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
+          LHCI_BUILD_CONTEXT__COMMIT_TIME: ${{ github.run_id }}
+        run: |
+          echo "================================="
+          echo "Lighthouse URL: $WEBSITE_URL"
+          echo "GitHub Run ID: ${{ github.run_id }}"
+          echo "GitHub Run Number: ${{ github.run_number }}"
+          echo "================================="
+
+          npx lhci autorun
