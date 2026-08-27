@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -46,20 +48,30 @@ jobs:
           };
           EOF
 
+      - name: Check website
+        env:
+          WEBSITE_URL: ${{ inputs.url }}
+        run: |
+          echo "Testing: $WEBSITE_URL"
+          curl -I --fail --max-time 30 "$WEBSITE_URL"
+
       - name: Run Lighthouse CI
         env:
           WEBSITE_URL: ${{ inputs.url }}
           LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
 
-          # Unique build information
-          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.run_id }}
-          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
-          LHCI_BUILD_CONTEXT__COMMIT_TIME: ${{ github.run_id }}
+          # Create a unique build for every workflow run
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: "${{ github.run_id }}"
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: "${{ github.ref_name }}"
+          LHCI_BUILD_CONTEXT__COMMIT_MESSAGE: "Lighthouse run #${{ github.run_number }} - ${{ inputs.url }}"
+          LHCI_BUILD_CONTEXT__COMMIT_TIME: "${{ github.run_id }}"
+
         run: |
-          echo "================================="
-          echo "Lighthouse URL: $WEBSITE_URL"
-          echo "GitHub Run ID: ${{ github.run_id }}"
-          echo "GitHub Run Number: ${{ github.run_number }}"
-          echo "================================="
+          echo "======================================"
+          echo "Website: $WEBSITE_URL"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
+          echo "Commit Message: Lighthouse run #${{ github.run_number }}"
+          echo "======================================"
 
           npx lhci autorun
