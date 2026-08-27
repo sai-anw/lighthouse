@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Website URL to test'
+        description: "Website URL to test"
         required: false
-        default: 'https://www.complywise.global'
+        default: "https://www.complywise.global"
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -22,34 +22,44 @@ jobs:
           node-version: 20
 
       - name: Install Lighthouse CI
-        run: npm install --save-dev @lhci/cli
+        run: npm install --no-save @lhci/cli
 
-      - name: Create lighthouserc.js
+      - name: Create Lighthouse configuration
         env:
           WEBSITE_URL: ${{ inputs.url }}
+          LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
         run: |
           cat > lighthouserc.js <<'EOF'
           module.exports = {
             ci: {
               collect: {
                 url: [
-                  process.env.WEBSITE_URL
+                  process.env.WEBSITE_URL || 'https://www.complywise.global'
                 ],
                 numberOfRuns: 3
               },
 
               upload: {
                 target: 'lhci',
-                serverBaseUrl: 'http://20.244.52.48:9001'
+                serverBaseUrl: 'http://20.244.52.48:9001',
+                token: process.env.LHCI_TOKEN
               }
             }
           };
           EOF
 
-      - name: Show Lighthouse configuration
+      - name: Display configuration
         run: cat lighthouserc.js
+
+      - name: Check website
+        env:
+          WEBSITE_URL: ${{ inputs.url }}
+        run: |
+          echo "Testing: $WEBSITE_URL"
+          curl -I --max-time 30 "$WEBSITE_URL"
 
       - name: Run Lighthouse CI
         env:
           WEBSITE_URL: ${{ inputs.url }}
+          LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}
         run: npx lhci autorun
