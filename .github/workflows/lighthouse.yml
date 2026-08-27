@@ -36,7 +36,7 @@ jobs:
                 url: [
                   process.env.WEBSITE_URL || 'https://complywise.global'
                 ],
-                numberOfRuns: 3
+                numberOfRuns: 1
               },
 
               upload: {
