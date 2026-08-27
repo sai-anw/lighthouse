@@ -1,0 +1,55 @@
+name: Lighthouse CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Website URL to test'
+        required: false
+        default: 'https://www.complywise.global'
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Lighthouse CI
+        run: npm install --save-dev @lhci/cli
+
+      - name: Create lighthouserc.js
+        env:
+          WEBSITE_URL: ${{ inputs.url }}
+        run: |
+          cat > lighthouserc.js <<'EOF'
+          module.exports = {
+            ci: {
+              collect: {
+                url: [
+                  process.env.WEBSITE_URL
+                ],
+                numberOfRuns: 3
+              },
+
+              upload: {
+                target: 'lhci',
+                serverBaseUrl: 'http://20.244.52.48:9001'
+              }
+            }
+          };
+          EOF
+
+      - name: Show Lighthouse configuration
+        run: cat lighthouserc.js
+
+      - name: Run Lighthouse CI
+        env:
+          WEBSITE_URL: ${{ inputs.url }}
+        run: npx lhci autorun
