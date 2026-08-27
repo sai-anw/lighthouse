@@ -6,7 +6,7 @@ on:
       url:
         description: "Website URL to test"
         required: false
-        default: "https://www.complywise.global"
+        default: "https://complywise.global"
 
 jobs:
   lighthouse:
@@ -34,7 +34,7 @@ jobs:
             ci: {
               collect: {
                 url: [
-                  process.env.WEBSITE_URL || 'https://www.complywise.global'
+                  process.env.WEBSITE_URL || 'https://complywise.global'
                 ],
                 numberOfRuns: 3
               },
